@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
+import { CSVLink } from "react-csv";
 
 const API_KEY = "K89732725588957";
 
@@ -56,7 +57,8 @@ const formatText = (text) => {
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [base64IMG, setBase64IMG] = useState();
-  const [text, setText] = useState("");
+  // const [text, setText] = useState("");
+  const [data, setData] = useState(null);
 
   // Upload image handler and calls convertToBase64
   const uploadImage = (event) => {
@@ -107,7 +109,18 @@ export default function Home() {
       const parsedText = data.ParsedResults?.[0]?.ParsedText || "";
 
       const final = formatText(parsedText);
-      setText(JSON.stringify(final, null, 2));
+      // setText(JSON.stringify(final, null, 2));
+
+      // Prepare data for CSV download
+      setData({
+        productList: final.productList,
+        headers: [
+          { label: "Detalle", key: "name" },
+          { label: "Cantidad", key: "quantity" },
+          { label: "Precio", key: "price" },
+          { label: "Total", key: "total" },
+        ],
+      });
     } catch (error) {
       console.error("Error reconociendo texto:", error);
     } finally {
@@ -151,10 +164,14 @@ export default function Home() {
           </>
         )}
 
-        {text && (
-          <div className="mt-4 p-4 border-2 rounded-lg bg-gray-600 text-white">
-            <pre className="whitespace-pre-wrap">{text}</pre>
-          </div>
+        {data && (
+          <CSVLink
+            data={data.productList}
+            headers={data.headers}
+            separator={";"}
+          >
+            Download me
+          </CSVLink>
         )}
       </form>
     </div>
