@@ -3,16 +3,69 @@ import { useState } from "react";
 
 const API_KEY = "K89732725588957";
 
+const clean = (str) => (str ? str.replaceAll("\t", " ") : "");
+
+const formatText = (text) => {
+  const linesArray = text.split("\t\r\n");
+  linesArray.forEach((item) => console.log(item));
+
+  const date = clean(linesArray.find((item) => item.match("Vigo")));
+
+  const startOfProductsIndex = linesArray.findIndex((item) =>
+    item.match("IMPORTE")
+  );
+
+  const totalIndex = linesArray.findIndex((item) => item.match("Total"));
+  const total = linesArray[totalIndex].split("\t")[1];
+  console.log(total);
+
+  const productsNoFormat = linesArray.slice(
+    startOfProductsIndex + 1,
+    totalIndex
+  );
+
+  const products = productsNoFormat.reduce((acc, curr, i, arr) => {
+    if (i % 2 === 0 && arr[i + 1] !== undefined) {
+      acc.push({ name: clean(curr), product: arr[i + 1] });
+    }
+    return acc;
+  }, []);
+
+  const productList = products.map((item) => {
+    const data = item.product.split("\t");
+    if (data.length === 3) data.unshift("*");
+
+    return {
+      name: item.name,
+      quantity: data[1],
+      price: data[2],
+      total: data[3],
+    };
+  });
+
+  const final = {
+    market: "Froiz",
+    date,
+    total,
+    productList,
+  };
+
+  return final;
+};
+
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [base64IMG, setBase64IMG] = useState();
+  const [text, setText] = useState("");
 
-  function uploadImage(event) {
+  // Upload image handler and calls convertToBase64
+  const uploadImage = (event) => {
     // const img = URL.createObjectURL(event.target.files[0]);
     const image = event.target.files[0];
     convertToBase64(image);
-  }
+  };
 
+  // Convert image to base64
   const convertToBase64 = (img) => {
     const reader = new FileReader();
     reader.readAsDataURL(img);
@@ -26,6 +79,7 @@ export default function Home() {
     };
   };
 
+  // Recognize text from the base64 image using OCR API
   const recognizeText = async () => {
     try {
       setLoading(true);
@@ -47,16 +101,13 @@ export default function Home() {
         throw new Error("Error en la solicitud a la API de OCR");
       }
 
-      console.log("response.data -----> ", response.data);
-      // const data = await response.json();
+      // console.log("response.data -----> ", response.data);
+      const { data } = response;
 
-      // if (!data.IsErroredOnProcessing) {
-      //   const parsedText = data.ParsedResults?.[0]?.ParsedText || "";
-      //   console.log("parsedText -----> ", parsedText);
-      // } else {
-      //   alert("Error procesando la imagen");
-      //   console.log(data);
-      // }
+      const parsedText = data.ParsedResults?.[0]?.ParsedText || "";
+
+      const final = formatText(parsedText);
+      setText(JSON.stringify(final, null, 2));
     } catch (error) {
       console.error("Error reconociendo texto:", error);
     } finally {
@@ -64,10 +115,11 @@ export default function Home() {
     }
   };
 
-  function handleSubmit(event) {
+  // Handle form submission
+  const handleSubmit = (event) => {
     event.preventDefault();
     recognizeText();
-  }
+  };
 
   return (
     <div>
@@ -97,6 +149,12 @@ export default function Home() {
               Convert to Excel
             </button>
           </>
+        )}
+
+        {text && (
+          <div className="mt-4 p-4 border-2 rounded-lg bg-gray-600 text-white">
+            <pre className="whitespace-pre-wrap">{text}</pre>
+          </div>
         )}
       </form>
     </div>
