@@ -1,3 +1,5 @@
+import imageCompression from "browser-image-compression";
+
 const clean = (str) => (str ? str.replaceAll("\t", " ") : "");
 
 export const extractInfoFromText = (text) => {
@@ -40,6 +42,8 @@ export const extractInfoFromText = (text) => {
     };
   });
 
+  productList.unshift({});
+  productList.push({});
   productList.push({});
 
   productList.push({
@@ -49,3 +53,37 @@ export const extractInfoFromText = (text) => {
 
   return productList;
 };
+
+export const convertToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.readAsDataURL(file);
+
+    reader.onload = () => {
+      resolve(reader.result);
+    };
+
+    reader.onerror = (error) => {
+      reject(error);
+    };
+  });
+};
+
+export async function handleImageUpload(imageFile) {
+  console.log(`originalFile size ${imageFile.size / 1024 / 1024} MB`);
+
+  const options = {
+    maxSizeMB: 1,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+  };
+
+  try {
+    const compressedFile = await imageCompression(imageFile, options);
+    console.log(`compressedFile size ${compressedFile.size / 1024 / 1024} MB`); // smaller than maxSizeMB
+    return compressedFile;
+  } catch (error) {
+    console.log(error);
+  }
+}

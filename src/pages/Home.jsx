@@ -2,45 +2,17 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { CSVLink } from "react-csv";
 import { getParsedText } from "../services/getParsedText";
-import { extractInfoFromText } from "../utils/utils";
+import {
+  convertToBase64,
+  extractInfoFromText,
+  handleImageUpload,
+} from "../utils/utils";
 import DragAndDrop from "../components/DragAndDrop";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  // const [base64IMG, setBase64IMG] = useState();
   const [ticketInformation, setTicketInformation] = useState(null);
   const [files, setFiles] = useState([]);
-
-  // Convert image to base64
-  // const convertToBase64 = (event) => {
-  //   const img = event.target.files[0];
-
-  //   const reader = new FileReader();
-  //   reader.readAsDataURL(img);
-
-  //   reader.onload = () => {
-  //     setBase64IMG(reader.result);
-  //   };
-  //   reader.onerror = (error) => {
-  //     console.error("Error converting image to base64:", error);
-  //   };
-  // };
-
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.readAsDataURL(file);
-
-      reader.onload = () => {
-        resolve(reader.result);
-      };
-
-      reader.onerror = (error) => {
-        reject(error);
-      };
-    });
-  };
 
   // Recognize text from the base64 image using OCR API
   // and extract data from it to generate excel file
@@ -50,9 +22,14 @@ export default function Home() {
     try {
       setLoading(true);
 
+      // Compress every image file before processing
+      const compressedImages = await Promise.all(
+        files.map((file) => handleImageUpload(file))
+      );
+
       // Convert all selected files to base64
       const base64Array = await Promise.all(
-        files.map((file) => convertToBase64(file))
+        compressedImages.map((image) => convertToBase64(image))
       );
 
       // Call API to get parsed text from each base64 image
