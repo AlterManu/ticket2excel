@@ -13,7 +13,6 @@ export const extractInfoFromText = (text) => {
   const totalIndex = linesArray.findIndex((item) => item.match("Total"));
 
   const total = linesArray[totalIndex].split("\t")[1];
-  console.log(total);
 
   const productsNoFormat = linesArray.slice(
     startOfProductsIndex + 1,
@@ -48,10 +47,5 @@ export const extractInfoFromText = (text) => {
     total: total.split(" ")[0],
   });
 
-  return {
-    market: "Froiz",
-    date,
-    total,
-    productList,
-  };
+  return productList;
 };

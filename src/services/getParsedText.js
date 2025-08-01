@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_KEY = "K89732725588957";
 
-// Petition to OCR's API
+// Request to OCR's API
 export const getParsedText = async (base64IMG) => {
   const url = "https://api.ocr.space/parse/image";
 
@@ -18,7 +18,7 @@ export const getParsedText = async (base64IMG) => {
   const response = await axios.post(url, body, { headers });
 
   if (response.status !== 200) {
-    throw new Error("Error en la solicitud a la API de OCR");
+    throw new Error("Error in the OCR's API request");
   }
 
   const { data } = response;

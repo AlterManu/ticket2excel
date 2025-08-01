@@ -3,25 +3,43 @@ import { useState } from "react";
 import { CSVLink } from "react-csv";
 import { getParsedText } from "../services/getParsedText";
 import { extractInfoFromText } from "../utils/utils";
+import DragAndDrop from "../components/DragAndDrop";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  const [base64IMG, setBase64IMG] = useState();
+  // const [base64IMG, setBase64IMG] = useState();
   const [ticketInformation, setTicketInformation] = useState(null);
+  const [files, setFiles] = useState([]);
 
   // Convert image to base64
-  const convertToBase64 = (event) => {
-    const img = event.target.files[0];
-    const reader = new FileReader();
-    reader.readAsDataURL(img);
+  // const convertToBase64 = (event) => {
+  //   const img = event.target.files[0];
 
-    reader.onload = () => {
-      // console.log("called: ", reader);
-      setBase64IMG(reader.result);
-    };
-    reader.onerror = (error) => {
-      console.error("Error converting image to base64:", error);
-    };
+  //   const reader = new FileReader();
+  //   reader.readAsDataURL(img);
+
+  //   reader.onload = () => {
+  //     setBase64IMG(reader.result);
+  //   };
+  //   reader.onerror = (error) => {
+  //     console.error("Error converting image to base64:", error);
+  //   };
+  // };
+
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.readAsDataURL(file);
+
+      reader.onload = () => {
+        resolve(reader.result);
+      };
+
+      reader.onerror = (error) => {
+        reject(error);
+      };
+    });
   };
 
   // Recognize text from the base64 image using OCR API
@@ -32,15 +50,32 @@ export default function Home() {
     try {
       setLoading(true);
 
-      // Call API to get parsed text from the base64 image
-      const parsedText = await getParsedText(base64IMG);
+      // Convert all selected files to base64
+      const base64Array = await Promise.all(
+        files.map((file) => convertToBase64(file))
+      );
+
+      // Call API to get parsed text from each base64 image
+      const parsedTextArray = await Promise.all(
+        base64Array.map((base64Img) => getParsedText(base64Img))
+      );
+
+      console.log("parsedTextArray -----> ", parsedTextArray);
+      // const parsedText = await getParsedText(base64IMG);
 
       // Get data and products from text
-      const final = extractInfoFromText(parsedText);
+      const finalArray = [];
+
+      parsedTextArray.forEach((parsedText) => {
+        const productList = extractInfoFromText(parsedText);
+        finalArray.push(...productList);
+      });
+
+      console.log("finalArray -----> ", finalArray);
 
       // Prepare data for CSV download
       setTicketInformation({
-        productList: final.productList,
+        productList: finalArray,
         headers: [
           { label: "Detalle", key: "name" },
           { label: "Cantidad", key: "quantity" },
@@ -60,27 +95,31 @@ export default function Home() {
       console.log("ticketInformation -----> ", ticketInformation);
   }, [ticketInformation]);
 
+  useEffect(() => {
+    files && console.log("Files selected: ", files);
+  }, [files]);
+
   return (
     <div>
       <h1 className="text-3xl mb-4">Ticket to Excel</h1>
       <form className="flex flex-col gap-2" onSubmit={generateExcel}>
-        <input
-          className="border-2 py-2 px-4 rounded-4xl cursor-pointer"
-          type="file"
-          onChange={convertToBase64}
-        />
-
         {loading && <div className="text-center text-blue-500">Loading...</div>}
 
-        {base64IMG && (
+        {files.length > 0 && (
           <>
-            <div className="w-[500px] h-[500px] my-4 border-2 border-dashed">
-              <img
-                className="w-full h-full object-contain"
-                src={base64IMG}
-                alt="Uploaded image"
-              />
-            </div>
+            {files.map((file, index) => (
+              <div
+                className="w-[300px] h-[300px] my-4 border-2 border-dashed"
+                key={index}
+              >
+                <img
+                  className="w-full h-full object-contain"
+                  src={URL.createObjectURL(file)}
+                  alt={`file-${index}`}
+                />
+              </div>
+            ))}
+
             <button
               className="border-2 py-2 px-4 rounded-4xl cursor-pointer"
               type="submit"
@@ -100,6 +139,10 @@ export default function Home() {
           </CSVLink>
         )}
       </form>
+
+      <div className="section">
+        <DragAndDrop onFilesSelected={setFiles} />
+      </div>
     </div>
   );
 }
