@@ -46,10 +46,7 @@ const DragNdrop = ({ onFilesSelected }) => {
             <AiOutlineCloudUpload />
             <div>
               <p>Drag and drop your files here</p>
-              <p>
-                Limit 1MB per file. Supported files: .JPG, .JPEG, .PNG, .HEIC,
-                .HEIF
-              </p>
+              <p>Limit 1MB per file. Supported files: .JPG, .JPEG, .PNG</p>
             </div>
           </div>
           <input
@@ -57,7 +54,7 @@ const DragNdrop = ({ onFilesSelected }) => {
             hidden
             id="browse"
             onChange={handleFileChange}
-            accept=".jpg,.jpeg,.png,.JPG,.JPEG,.PNG,.heic,.HEIC,.heif,.HEIF"
+            accept=".jpg,.jpeg,.png,.JPG,.JPEG,.PNG"
             multiple
           />
           <label htmlFor="browse" className="browse-btn">
